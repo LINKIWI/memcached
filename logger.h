@@ -83,6 +83,7 @@ struct logentry_ext_write {
 struct logentry_item_get {
     uint8_t was_found;
     uint8_t nkey;
+    int nbytes;
     uint8_t clsid;
     int sfd;
     char key[];

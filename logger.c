@@ -213,9 +213,10 @@ static int _logger_thread_parse_ige(logentry *e, char *scratch) {
 
     uriencode(le->key, keybuf, le->nkey, KEY_MAX_URI_ENCODED_LENGTH);
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
-            "ts=%d.%d gid=%llu type=item_get key=%s status=%s clsid=%u cfd=%d\n",
+            "ts=%d.%d gid=%llu type=item_get key=%s status=%s clsid=%u cfd=%d size=%d\n",
             (int)e->tv.tv_sec, (int)e->tv.tv_usec, (unsigned long long) e->gid,
-            keybuf, was_found_map[le->was_found], le->clsid, le->sfd);
+            keybuf, was_found_map[le->was_found], le->clsid, le->sfd,
+            le->nbytes > 0 ? le->nbytes - 2 : 0);
     return total;
 }
 
@@ -662,10 +663,11 @@ static void _logger_log_ext_write(logentry *e, item *it, uint8_t bucket) {
  * for more endpoints to be written before making it generic, though.
  */
 static void _logger_log_item_get(logentry *e, const int was_found, const char *key,
-        const int nkey, const uint8_t clsid, const int sfd) {
+        const int nkey, const int nbytes, const uint8_t clsid, const int sfd) {
     struct logentry_item_get *le = (struct logentry_item_get *) e->data;
     le->was_found = was_found;
     le->nkey = nkey;
+    le->nbytes = nbytes;
     le->clsid = clsid;
     memcpy(le->key, key, nkey);
     le->sfd = sfd;
@@ -751,9 +753,10 @@ enum logger_ret_type logger_log(logger *l, const enum log_entry_type event, cons
             int was_found = va_arg(ap, int);
             char *key = va_arg(ap, char *);
             size_t nkey = va_arg(ap, size_t);
+            int nbytes = va_arg(ap, int);
             uint8_t gclsid = va_arg(ap, int);
             int gsfd = va_arg(ap, int);
-            _logger_log_item_get(e, was_found, key, nkey, gclsid, gsfd);
+            _logger_log_item_get(e, was_found, key, nkey, nbytes, gclsid, gsfd);
             va_end(ap);
             break;
         case LOGGER_ITEM_STORE_ENTRY:
