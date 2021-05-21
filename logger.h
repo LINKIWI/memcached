@@ -94,6 +94,7 @@ struct logentry_item_store {
     int cmd;
     rel_time_t ttl;
     uint8_t nkey;
+    int nbytes;
     uint8_t clsid;
     int sfd;
     char key[];
