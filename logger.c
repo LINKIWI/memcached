@@ -201,7 +201,7 @@ static int _logger_thread_parse_ise(logentry *e, char *scratch) {
             "ts=%d.%d gid=%llu type=item_store key=%s status=%s cmd=%s ttl=%u clsid=%u cfd=%d size=%d\n",
             (int)e->tv.tv_sec, (int)e->tv.tv_usec, (unsigned long long) e->gid,
             keybuf, status_map[le->status], cmd, le->ttl, le->clsid, le->sfd,
-            le->nbytes > 0 ? le->nbytes - 2 : 0);
+            le->nbytes > 0 ? le->nbytes - 2 /* CRLF */ : 0);
     return total;
 }
 
@@ -217,7 +217,7 @@ static int _logger_thread_parse_ige(logentry *e, char *scratch) {
             "ts=%d.%d gid=%llu type=item_get key=%s status=%s clsid=%u cfd=%d size=%d\n",
             (int)e->tv.tv_sec, (int)e->tv.tv_usec, (unsigned long long) e->gid,
             keybuf, was_found_map[le->was_found], le->clsid, le->sfd,
-            le->nbytes > 0 ? le->nbytes - 2 : 0);
+            le->nbytes > 0 ? le->nbytes - 2 /* CRLF */ : 0);
     return total;
 }
 
@@ -231,7 +231,7 @@ static int _logger_thread_parse_ee(logentry *e, char *scratch) {
             (int)e->tv.tv_sec, (int)e->tv.tv_usec, (unsigned long long) e->gid,
             keybuf, (le->it_flags & ITEM_FETCHED) ? "yes" : "no",
             (long long int)le->exptime, le->latime, le->clsid,
-            le->nbytes > 0 ? le->nbytes - 2 : 0);
+            le->nbytes > 0 ? le->nbytes - 2 /* CRLF */ : 0);
 
     return total;
 }
