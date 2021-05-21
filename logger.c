@@ -227,10 +227,11 @@ static int _logger_thread_parse_ee(logentry *e, char *scratch) {
     struct logentry_eviction *le = (struct logentry_eviction *) e->data;
     uriencode(le->key, keybuf, le->nkey, KEY_MAX_URI_ENCODED_LENGTH);
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
-            "ts=%d.%d gid=%llu type=eviction key=%s fetch=%s ttl=%lld la=%d clsid=%u\n",
+            "ts=%d.%d gid=%llu type=eviction key=%s fetch=%s ttl=%lld la=%d clsid=%u size=%d\n",
             (int)e->tv.tv_sec, (int)e->tv.tv_usec, (unsigned long long) e->gid,
             keybuf, (le->it_flags & ITEM_FETCHED) ? "yes" : "no",
-            (long long int)le->exptime, le->latime, le->clsid);
+            (long long int)le->exptime, le->latime, le->clsid,
+            le->nbytes > 0 ? le->nbytes - 2 : 0);
 
     return total;
 }
@@ -637,6 +638,7 @@ static void _logger_log_evictions(logentry *e, item *it) {
     le->latime = current_time - it->time;
     le->it_flags = it->it_flags;
     le->nkey = it->nkey;
+    le->nbytes = it->nbytes;
     le->clsid = ITEM_clsid(it);
     memcpy(le->key, ITEM_key(it), it->nkey);
     e->size = sizeof(struct logentry_eviction) + le->nkey;

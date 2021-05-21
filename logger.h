@@ -66,6 +66,7 @@ struct logentry_eviction {
     uint32_t latime;
     uint16_t it_flags;
     uint8_t nkey;
+    int nbytes;
     uint8_t clsid;
     char key[];
 };
