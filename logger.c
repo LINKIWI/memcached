@@ -253,7 +253,7 @@ static int _logger_thread_parse_extw(logentry *e, char *scratch) {
 
 static int _logger_thread_parse_cn(logentry *e, char *scratch) {
     int total;
-    struct logentry_conn_new *le = (struct logentry_conn_new *) e->data;
+    struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
             "ts=%d.%d gid=%llu type=conn_new rip=%s rport=%hu transport=%s cfd=%d\n",
             (int) e->tv.tv_sec, (int) e->tv.tv_usec, (unsigned long long) e->gid,
@@ -707,9 +707,9 @@ static void _logger_log_item_store(logentry *e, const enum store_item_type statu
     e->size = sizeof(struct logentry_item_store) + nkey;
 }
 
-static void _logger_log_conn_new(logentry *e, struct sockaddr_in *addr,
+static void _logger_log_conn_event(logentry *e, struct sockaddr_in *addr,
         enum network_transport transport, int sfd) {
-    struct logentry_conn_new *le = (struct logentry_conn_new *) e->data;
+    struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     le->rip = inet_ntoa(addr->sin_addr);
     le->rport = addr->sin_port;
     le->sfd = sfd;
@@ -727,6 +727,7 @@ static void _logger_log_conn_new(logentry *e, struct sockaddr_in *addr,
             le->transport = "unknown";
             break;
     }
+    e->size = sizeof(struct logentry_conn_event);
 }
 
 /* Public function for logging an entry.
@@ -814,7 +815,7 @@ enum logger_ret_type logger_log(logger *l, const enum log_entry_type event, cons
             enum network_transport transport = va_arg(ap, enum network_transport);
             int csfd = va_arg(ap, int);
             va_end(ap);
-            _logger_log_conn_new(e, addr, transport, csfd);
+            _logger_log_conn_event(e, addr, transport, csfd);
             break;
     }
 

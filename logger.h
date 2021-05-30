@@ -100,7 +100,7 @@ struct logentry_item_store {
     char key[];
 };
 
-struct logentry_conn_new {
+struct logentry_conn_event {
     const char *rip;
     in_port_t rport;
     const char *transport;
