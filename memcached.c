@@ -672,7 +672,7 @@ conn *conn_new(const int sfd, enum conn_states init_state,
         }
 
         LOGGER_LOG(NULL, LOG_CONNEVENTS, LOGGER_CONNECTION_NEW, NULL,
-                (struct sockaddr_in *) &c->request_addr, sfd);
+                (struct sockaddr_in *) &c->request_addr, c->transport, sfd);
     }
 
     if (settings.verbose > 1) {

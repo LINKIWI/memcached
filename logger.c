@@ -255,9 +255,9 @@ static int _logger_thread_parse_cn(logentry *e, char *scratch) {
     int total;
     struct logentry_conn_new *le = (struct logentry_conn_new *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
-            "ts=%d.%d gid=%llu type=conn_new rip=%s rport=%hu cfd=%d\n",
+            "ts=%d.%d gid=%llu type=conn_new rip=%s rport=%hu transport=%s cfd=%d\n",
             (int) e->tv.tv_sec, (int) e->tv.tv_usec, (unsigned long long) e->gid,
-            le->rip, le->rport, le->sfd);
+            le->rip, le->rport, le->transport, le->sfd);
 
     return total;
 }
@@ -707,11 +707,26 @@ static void _logger_log_item_store(logentry *e, const enum store_item_type statu
     e->size = sizeof(struct logentry_item_store) + nkey;
 }
 
-static void _logger_log_conn_new(logentry *e, struct sockaddr_in *addr, int sfd) {
+static void _logger_log_conn_new(logentry *e, struct sockaddr_in *addr,
+        enum network_transport transport, int sfd) {
     struct logentry_conn_new *le = (struct logentry_conn_new *) e->data;
     le->rip = inet_ntoa(addr->sin_addr);
     le->rport = addr->sin_port;
     le->sfd = sfd;
+    switch (transport) {
+        case local_transport:
+            le->transport = "local";
+            break;
+        case tcp_transport:
+            le->transport = "tcp";
+            break;
+        case udp_transport:
+            le->transport = "udp";
+            break;
+        default:
+            le->transport = "unknown";
+            break;
+    }
 }
 
 /* Public function for logging an entry.
@@ -796,9 +811,10 @@ enum logger_ret_type logger_log(logger *l, const enum log_entry_type event, cons
         case LOGGER_CONNECTION_NEW_ENTRY:
             va_start(ap, entry);
             struct sockaddr_in *addr = va_arg(ap, struct sockaddr_in *);
+            enum network_transport transport = va_arg(ap, enum network_transport);
             int csfd = va_arg(ap, int);
             va_end(ap);
-            _logger_log_conn_new(e, addr, csfd);
+            _logger_log_conn_new(e, addr, transport, csfd);
             break;
     }
 

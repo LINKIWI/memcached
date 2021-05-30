@@ -103,6 +103,7 @@ struct logentry_item_store {
 struct logentry_conn_new {
     const char *rip;
     in_port_t rport;
+    const char *transport;
     int sfd;
 };
 
