@@ -58,6 +58,7 @@ static const entry_details default_entries[] = {
         "type=slab_move src=%d dst=%d"
     },
     [LOGGER_CONNECTION_NEW] = {LOGGER_CONNECTION_NEW_ENTRY, 512, LOG_CONNEVENTS, NULL},
+    [LOGGER_CONNECTION_CLOSE] = {LOGGER_CONNECTION_CLOSE_ENTRY, 512, LOG_CONNEVENTS, NULL},
 #ifdef EXTSTORE
     [LOGGER_EXTSTORE_WRITE] = {LOGGER_EXT_WRITE_ENTRY, 512, LOG_EVICTIONS, NULL},
     [LOGGER_COMPACT_START] = {LOGGER_TEXT_ENTRY, 512, LOG_SYSEVENTS,
@@ -262,6 +263,17 @@ static int _logger_thread_parse_cn(logentry *e, char *scratch) {
     return total;
 }
 
+static int _logger_thread_parse_cc(logentry *e, char *scratch) {
+    int total;
+    struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
+    total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
+            "ts=%d.%d gid=%llu type=conn_close rip=%s rport=%hu transport=%s cfd=%d\n",
+            (int) e->tv.tv_sec, (int) e->tv.tv_usec, (unsigned long long) e->gid,
+            le->rip, le->rport, le->transport, le->sfd);
+
+    return total;
+}
+
 /* Completes rendering of log line. */
 static enum logger_parse_entry_ret logger_thread_parse_entry(logentry *e, struct logger_stats *ls,
         char *scratch, int *scratch_len) {
@@ -289,6 +301,9 @@ static enum logger_parse_entry_ret logger_thread_parse_entry(logentry *e, struct
             break;
         case LOGGER_CONNECTION_NEW_ENTRY:
             total = _logger_thread_parse_cn(e, scratch);
+            break;
+        case LOGGER_CONNECTION_CLOSE_ENTRY:
+            total = _logger_thread_parse_cc(e, scratch);
             break;
 
     }
@@ -810,6 +825,7 @@ enum logger_ret_type logger_log(logger *l, const enum log_entry_type event, cons
             va_end(ap);
             break;
         case LOGGER_CONNECTION_NEW_ENTRY:
+        case LOGGER_CONNECTION_CLOSE_ENTRY:
             va_start(ap, entry);
             struct sockaddr_in *addr = va_arg(ap, struct sockaddr_in *);
             enum network_transport transport = va_arg(ap, enum network_transport);
