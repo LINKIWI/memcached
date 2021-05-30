@@ -2200,6 +2200,8 @@ static void process_watch_command(conn *c, token_t *tokens, const size_t ntokens
                 f |= LOG_MUTATIONS;
             } else if ((strcmp(tokens[x].value, "sysevents") == 0)) {
                 f |= LOG_SYSEVENTS;
+            } else if ((strcmp(tokens[x].value, "connevents") == 0)) {
+                f |= LOG_CONNEVENTS;
             } else {
                 out_string(c, "ERROR");
                 return;

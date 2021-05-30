@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 4; c-basic-offset: 4; indent-tabs-mode: nil -*- */
 
+#include <arpa/inet.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -56,6 +57,7 @@ static const entry_details default_entries[] = {
     [LOGGER_SLAB_MOVE] = {LOGGER_TEXT_ENTRY, 512, LOG_SYSEVENTS,
         "type=slab_move src=%d dst=%d"
     },
+    [LOGGER_CONNECTION_NEW] = {LOGGER_CONNECTION_NEW_ENTRY, 512, LOG_CONNEVENTS, NULL},
 #ifdef EXTSTORE
     [LOGGER_EXTSTORE_WRITE] = {LOGGER_EXT_WRITE_ENTRY, 512, LOG_EVICTIONS, NULL},
     [LOGGER_COMPACT_START] = {LOGGER_TEXT_ENTRY, 512, LOG_SYSEVENTS,
@@ -232,6 +234,7 @@ static int _logger_thread_parse_ee(logentry *e, char *scratch) {
 
     return total;
 }
+
 #ifdef EXTSTORE
 static int _logger_thread_parse_extw(logentry *e, char *scratch) {
     int total;
@@ -247,6 +250,18 @@ static int _logger_thread_parse_extw(logentry *e, char *scratch) {
     return total;
 }
 #endif
+
+static int _logger_thread_parse_cn(logentry *e, char *scratch) {
+    int total;
+    struct logentry_conn_new *le = (struct logentry_conn_new *) e->data;
+    total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
+            "ts=%d.%d gid=%llu type=conn_new rip=%s rport=%hu cfd=%d\n",
+            (int) e->tv.tv_sec, (int) e->tv.tv_usec, (unsigned long long) e->gid,
+            le->rip, le->rport, le->sfd);
+
+    return total;
+}
+
 /* Completes rendering of log line. */
 static enum logger_parse_entry_ret logger_thread_parse_entry(logentry *e, struct logger_stats *ls,
         char *scratch, int *scratch_len) {
@@ -271,6 +286,9 @@ static enum logger_parse_entry_ret logger_thread_parse_entry(logentry *e, struct
             break;
         case LOGGER_ITEM_STORE_ENTRY:
             total = _logger_thread_parse_ise(e, scratch);
+            break;
+        case LOGGER_CONNECTION_NEW_ENTRY:
+            total = _logger_thread_parse_cn(e, scratch);
             break;
 
     }
@@ -689,6 +707,13 @@ static void _logger_log_item_store(logentry *e, const enum store_item_type statu
     e->size = sizeof(struct logentry_item_store) + nkey;
 }
 
+static void _logger_log_conn_new(logentry *e, struct sockaddr_in *addr, int sfd) {
+    struct logentry_conn_new *le = (struct logentry_conn_new *) e->data;
+    le->rip = inet_ntoa(addr->sin_addr);
+    le->rport = addr->sin_port;
+    le->sfd = sfd;
+}
+
 /* Public function for logging an entry.
  * Tries to encapsulate as much of the formatting as possible to simplify the
  * caller's code.
@@ -767,6 +792,13 @@ enum logger_ret_type logger_log(logger *l, const enum log_entry_type event, cons
             int ssfd = va_arg(ap, int);
             _logger_log_item_store(e, status, comm, skey, snkey, sttl, sclsid, ssfd);
             va_end(ap);
+            break;
+        case LOGGER_CONNECTION_NEW_ENTRY:
+            va_start(ap, entry);
+            struct sockaddr_in *addr = va_arg(ap, struct sockaddr_in *);
+            int csfd = va_arg(ap, int);
+            va_end(ap);
+            _logger_log_conn_new(e, addr, csfd);
             break;
     }
 
