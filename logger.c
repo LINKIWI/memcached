@@ -722,12 +722,26 @@ static void _logger_log_item_store(logentry *e, const enum store_item_type statu
     e->size = sizeof(struct logentry_item_store) + nkey;
 }
 
-static void _logger_log_conn_event(logentry *e, struct sockaddr_in *addr,
+static void _logger_log_conn_event(logentry *e, struct sockaddr *addr,
         enum network_transport transport, int sfd) {
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
-    le->rip = inet_ntoa(addr->sin_addr);
-    le->rport = addr->sin_port;
+
+    memset(le->rip, 0, sizeof(le->rip));
     le->sfd = sfd;
+
+    switch (addr->sa_family) {
+        case AF_INET:
+            inet_ntop(AF_INET, &((struct sockaddr_in *) addr)->sin_addr,
+                    le->rip, sizeof(le->rip) - 1);
+            le->rport = ntohs(((struct sockaddr_in *) addr)->sin_port);
+            break;
+        case AF_INET6:
+            inet_ntop(AF_INET6, &((struct sockaddr_in6 *) addr)->sin6_addr,
+                    le->rip, sizeof(le->rip) - 1);
+            le->rport = ntohs(((struct sockaddr_in6 *) addr)->sin6_port);
+            break;
+    }
+
     switch (transport) {
         case local_transport:
             le->transport = "local";
@@ -742,6 +756,7 @@ static void _logger_log_conn_event(logentry *e, struct sockaddr_in *addr,
             le->transport = "unknown";
             break;
     }
+
     e->size = sizeof(struct logentry_conn_event);
 }
 
@@ -827,7 +842,7 @@ enum logger_ret_type logger_log(logger *l, const enum log_entry_type event, cons
         case LOGGER_CONNECTION_NEW_ENTRY:
         case LOGGER_CONNECTION_CLOSE_ENTRY:
             va_start(ap, entry);
-            struct sockaddr_in *addr = va_arg(ap, struct sockaddr_in *);
+            struct sockaddr *addr = va_arg(ap, struct sockaddr *);
             enum network_transport transport = va_arg(ap, enum network_transport);
             int csfd = va_arg(ap, int);
             va_end(ap);

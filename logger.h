@@ -103,8 +103,8 @@ struct logentry_item_store {
 };
 
 struct logentry_conn_event {
-    const char *rip;
-    in_port_t rport;
+    char rip[64];
+    unsigned short rport;
     const char *transport;
     int sfd;
 };
