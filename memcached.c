@@ -670,7 +670,9 @@ conn *conn_new(const int sfd, enum conn_states init_state,
             perror("getpeername");
             memset(&c->request_addr, 0, sizeof(c->request_addr));
         }
+    }
 
+    if (init_state == conn_new_cmd) {
         LOGGER_LOG(NULL, LOG_CONNEVENTS, LOGGER_CONNECTION_NEW, NULL,
                 (struct sockaddr *) &c->request_addr, c->transport, sfd);
     }
