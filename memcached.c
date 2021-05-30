@@ -858,8 +858,10 @@ void conn_free(conn *c) {
 static void conn_close(conn *c) {
     assert(c != NULL);
 
-    LOGGER_LOG(c->thread->l, LOG_CONNEVENTS, LOGGER_CONNECTION_CLOSE, NULL,
-            (struct sockaddr *) &c->request_addr, c->transport, c->sfd);
+    if (c->thread) {
+        LOGGER_LOG(c->thread->l, LOG_CONNEVENTS, LOGGER_CONNECTION_CLOSE, NULL,
+                (struct sockaddr *) &c->request_addr, c->transport, c->sfd);
+    }
 
     /* delete the event, the socket and the conn */
     event_del(&c->event);
