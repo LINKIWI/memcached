@@ -233,6 +233,7 @@ static void settings_init(void) {
     settings.ssl_last_cert_refresh_time = current_time;
     settings.ssl_wbuf_size = 16 * 1024; // default is 16KB (SSL max frame size is 17KB)
     settings.ssl_session_cache = false;
+    settings.ssl_min_version = TLS1_2_VERSION;
 #endif
     /* By default this string should be NULL for getaddrinfo() */
     settings.inter = NULL;
@@ -3959,9 +3960,12 @@ static void usage(void) {
            "   - ssl_wbuf_size:       size in kilobytes of per-connection SSL output buffer\n"
            "                          (default: %u)\n", settings.ssl_wbuf_size / (1 << 10));
     printf("   - ssl_session_cache:   enable server-side SSL session cache, to support session\n"
-           "                          resumption\n");
+           "                          resumption\n"
+           "   - ssl_min_version:     minimum protocol version to accept, default is 2(TLSv1.2).\n"
+           "                          valid values are 0(TLSv1.0), 1(TLSv1.1), 2(TLSv1.2), or 3(TLSv1.3).\n");
     verify_default("ssl_keyformat", settings.ssl_keyformat == SSL_FILETYPE_PEM);
     verify_default("ssl_verify_mode", settings.ssl_verify_mode == SSL_VERIFY_NONE);
+    verify_default("ssl_min_version", settings.ssl_min_version == TLS1_2_VERSION);
 #endif
     printf("-N, --napi_ids            number of napi ids. see doc/napi_ids.txt for more details\n");
     return;
@@ -4595,6 +4599,7 @@ int main (int argc, char **argv) {
         SSL_CA_CERT,
         SSL_WBUF_SIZE,
         SSL_SESSION_CACHE,
+        SSL_MIN_VERSION,
 #endif
 #ifdef MEMCACHED_DEBUG
         RELAXED_PRIVILEGES,
@@ -4648,6 +4653,7 @@ int main (int argc, char **argv) {
         [SSL_CA_CERT] = "ssl_ca_cert",
         [SSL_WBUF_SIZE] = "ssl_wbuf_size",
         [SSL_SESSION_CACHE] = "ssl_session_cache",
+        [SSL_MIN_VERSION] = "ssl_min_version",
 #endif
 #ifdef MEMCACHED_DEBUG
         [RELAXED_PRIVILEGES] = "relaxed_privileges",
@@ -5319,6 +5325,35 @@ int main (int argc, char **argv) {
             case SSL_SESSION_CACHE:
                 settings.ssl_session_cache = true;
                 break;
+            case SSL_MIN_VERSION: {
+                int min_version;
+                if (subopts_value == NULL) {
+                    fprintf(stderr, "Missing ssl_min_version argument\n");
+                    return 1;
+                }
+                if (!safe_strtol(subopts_value, &min_version)) {
+                    fprintf(stderr, "could not parse argument to ssl_min_version\n");
+                    return 1;
+                }
+                switch (min_version) {
+                    case 0:
+                        settings.ssl_min_version = TLS1_VERSION;
+                        break;
+                    case 1:
+                        settings.ssl_min_version = TLS1_1_VERSION;
+                        break;
+                    case 2:
+                        settings.ssl_min_version = TLS1_2_VERSION;
+                        break;
+                    case 3:
+                        settings.ssl_min_version = TLS1_3_VERSION;
+                        break;
+                    default:
+                        fprintf(stderr, "invalid ssl_min_version. Use help to see valid options.\n");
+                        return 1;
+                }
+                break;
+            }
 #endif
             case MODERN:
                 /* currently no new defaults */
