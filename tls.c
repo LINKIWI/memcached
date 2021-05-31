@@ -248,4 +248,19 @@ int ssl_new_session_callback(SSL *s, SSL_SESSION *sess) {
 bool refresh_certs(char **errmsg) {
     return load_server_certificates(errmsg);
 }
+
+const char *ssl_proto_text(int version) {
+    switch (version) {
+        case TLS1_VERSION:
+            return "tlsv1.0";
+        case TLS1_1_VERSION:
+            return "tlsv1.1";
+        case TLS1_2_VERSION:
+            return "tlsv1.2";
+        case TLS1_3_VERSION:
+            return "tlsv1.3";
+        default:
+            return "unknown";
+    }
+}
 #endif
