@@ -5350,7 +5350,7 @@ int main (int argc, char **argv) {
                         settings.ssl_min_version = TLS1_3_VERSION;
                         break;
                     default:
-                        fprintf(stderr, "invalid ssl_min_version. Use help to see valid options.\n");
+                        fprintf(stderr, "Invalid ssl_min_version. Use help to see valid options.\n");
                         return 1;
                 }
                 break;
