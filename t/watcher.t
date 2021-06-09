@@ -5,7 +5,7 @@ use strict;
 use warnings;
 use Socket qw/SO_RCVBUF/;
 
-use Test::More tests => 12;
+use Test::More tests => 20;
 use FindBin qw($Bin);
 use lib "$Bin/lib";
 use MemcachedTest;
