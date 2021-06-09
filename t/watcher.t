@@ -135,6 +135,29 @@ SKIP: {
     is($found_cas, 1, "correctly logged cas command");
 }
 
+# test get/set value sizes
+{
+    my $watcher = $server->new_sock;
+    print $watcher "watch fetchers mutations\n";
+    is(<$watcher>, "OK\r\n", "fetchers and mutations watcher enabled");
+
+    print $client "set vfoo 0 0 4\r\nvbar\r\n";
+    is(<$client>, "STORED\r\n", "stored the key");
+
+    print $client "get vfoo\r\n";
+    is(<$client>, "VALUE vfoo 0 4\r\n", "read the key header");
+    is(<$client>, "vbar\r\n", "read the key value");
+    is(<$client>, "END\r\n", "read the value trailer");
+
+    sleep 1;
+    like(<$watcher>, qr/ts=\d+\.\d+\ gid=\d+ type=item_get key=vfoo .+ size=0/,
+        "logged initial item fetch");
+    like(<$watcher>, qr/ts=\d+\.\d+\ gid=\d+ type=item_store key=vfoo .+ size=4/,
+        "logged item store with correct size");
+    like(<$watcher>, qr/ts=\d+\.\d+\ gid=\d+ type=item_get key=vfoo .+ size=4/,
+        "logged item get with correct size");
+}
+
 # test no_watch option
 {
     my $nowatch_server = new_memcached('-W');
