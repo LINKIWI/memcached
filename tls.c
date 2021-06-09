@@ -257,8 +257,10 @@ const char *ssl_proto_text(int version) {
             return "tlsv1.1";
         case TLS1_2_VERSION:
             return "tlsv1.2";
+#ifdef HAVE_OPENSSL_111
         case TLS1_3_VERSION:
             return "tlsv1.3";
+#endif
         default:
             return "unknown";
     }

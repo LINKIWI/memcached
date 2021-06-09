@@ -3963,7 +3963,11 @@ static void usage(void) {
     printf("   - ssl_session_cache:   enable server-side SSL session cache, to support session\n"
            "                          resumption\n"
            "   - ssl_min_version:     minimum protocol version to accept, default is 2(TLSv1.2).\n"
+#ifdef HAVE_OPENSSL_111
            "                          valid values are 0(TLSv1.0), 1(TLSv1.1), 2(TLSv1.2), or 3(TLSv1.3).\n");
+#else
+           "                          valid values are 0(TLSv1.0), 1(TLSv1.1), or 2(TLSv1.2).\n");
+#endif
     verify_default("ssl_keyformat", settings.ssl_keyformat == SSL_FILETYPE_PEM);
     verify_default("ssl_verify_mode", settings.ssl_verify_mode == SSL_VERIFY_NONE);
     verify_default("ssl_min_version", settings.ssl_min_version == TLS1_2_VERSION);
@@ -5346,9 +5350,11 @@ int main (int argc, char **argv) {
                     case 2:
                         settings.ssl_min_version = TLS1_2_VERSION;
                         break;
+#ifdef HAVE_OPENSSL_111
                     case 3:
                         settings.ssl_min_version = TLS1_3_VERSION;
                         break;
+#endif
                     default:
                         fprintf(stderr, "Invalid ssl_min_version. Use help to see valid options.\n");
                         return 1;
