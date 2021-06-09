@@ -63,10 +63,10 @@ typedef const struct {
 /* log entry intermediary structures */
 struct logentry_eviction {
     long long int exptime;
+    int nbytes;
     uint32_t latime;
     uint16_t it_flags;
     uint8_t nkey;
-    int nbytes;
     uint8_t clsid;
     char key[];
 };
@@ -84,8 +84,8 @@ struct logentry_ext_write {
 struct logentry_item_get {
     uint8_t was_found;
     uint8_t nkey;
-    int nbytes;
     uint8_t clsid;
+    int nbytes;
     int sfd;
     char key[];
 };
@@ -95,8 +95,8 @@ struct logentry_item_store {
     int cmd;
     rel_time_t ttl;
     uint8_t nkey;
-    int nbytes;
     uint8_t clsid;
+    int nbytes;
     int sfd;
     char key[];
 };
