@@ -526,6 +526,8 @@ void conn_close_idle(conn *c) {
         c->thread->stats.idle_kicks++;
         pthread_mutex_unlock(&c->thread->stats.mutex);
 
+        c->close_reason = IDLE_TIMEOUT_CLOSE;
+
         conn_set_state(c, conn_closing);
         drive_machine(c);
     }
@@ -2392,6 +2394,7 @@ static enum try_read_result try_read_network(conn *c) {
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 break;
             }
+            c->close_reason = ERROR_CLOSE;
             return READ_ERROR;
         }
     }
@@ -2626,6 +2629,7 @@ static enum transmit_result transmit(conn *c) {
         if (!update_event(c, EV_WRITE | EV_PERSIST)) {
             if (settings.verbose > 0)
                 fprintf(stderr, "Couldn't update event\n");
+            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             return TRANSMIT_HARD_ERROR;
         }
@@ -2636,6 +2640,7 @@ static enum transmit_result transmit(conn *c) {
     if (settings.verbose > 0)
         perror("Failed to write, and not due to blocking");
 
+    c->close_reason = ERROR_CLOSE;
     conn_set_state(c, conn_closing);
     return TRANSMIT_HARD_ERROR;
 }
@@ -2765,6 +2770,7 @@ static enum transmit_result transmit_udp(conn *c) {
         if (!update_event(c, EV_WRITE | EV_PERSIST)) {
             if (settings.verbose > 0)
                 fprintf(stderr, "Couldn't update event\n");
+            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             return TRANSMIT_HARD_ERROR;
         }
@@ -2993,6 +2999,7 @@ static void drive_machine(conn *c) {
             if (!update_event(c, EV_READ | EV_PERSIST)) {
                 if (settings.verbose > 0)
                     fprintf(stderr, "Couldn't update event\n");
+                c->close_reason = ERROR_CLOSE;
                 conn_set_state(c, conn_closing);
                 break;
             }
@@ -3006,6 +3013,7 @@ static void drive_machine(conn *c) {
                 // Assign a read buffer if necessary.
                 if (!rbuf_alloc(c)) {
                     // TODO: Some way to allow for temporary failures.
+                    c->close_reason = ERROR_CLOSE;
                     conn_set_state(c, conn_closing);
                     break;
                 }
@@ -3069,6 +3077,7 @@ static void drive_machine(conn *c) {
                     if (!update_event(c, EV_WRITE | EV_PERSIST)) {
                         if (settings.verbose > 0)
                             fprintf(stderr, "Couldn't update event\n");
+                        c->close_reason = ERROR_CLOSE;
                         conn_set_state(c, conn_closing);
                         break;
                     }
@@ -3088,6 +3097,7 @@ static void drive_machine(conn *c) {
                 if (settings.verbose) {
                     fprintf(stderr, "Invalid rlbytes to read: len %d\n", c->rlbytes);
                 }
+                c->close_reason = ERROR_CLOSE;
                 conn_set_state(c, conn_closing);
                 break;
             }
@@ -3126,6 +3136,7 @@ static void drive_machine(conn *c) {
             }
 
             if (res == 0) { /* end of stream */
+                c->close_reason = ERROR_CLOSE;
                 conn_set_state(c, conn_closing);
                 break;
             }
@@ -3134,6 +3145,7 @@ static void drive_machine(conn *c) {
                 if (!update_event(c, EV_READ | EV_PERSIST)) {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't update event\n");
+                    c->close_reason = ERROR_CLOSE;
                     conn_set_state(c, conn_closing);
                     break;
                 }
@@ -3162,6 +3174,7 @@ static void drive_machine(conn *c) {
                         (void *)c->rcurr, (void *)c->ritem, (void *)c->rbuf,
                         (int)c->rlbytes, (int)c->rsize);
             }
+            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             break;
 
@@ -3198,6 +3211,7 @@ static void drive_machine(conn *c) {
                 if (!update_event(c, EV_READ | EV_PERSIST)) {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Couldn't update event\n");
+                    c->close_reason = ERROR_CLOSE;
                     conn_set_state(c, conn_closing);
                     break;
                 }
@@ -3207,6 +3221,7 @@ static void drive_machine(conn *c) {
             /* otherwise we have a real error, on which we close the connection */
             if (settings.verbose > 0)
                 fprintf(stderr, "Failed to read, and not due to blocking\n");
+            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             break;
 
@@ -3249,6 +3264,7 @@ static void drive_machine(conn *c) {
                 } else {
                     if (settings.verbose > 0)
                         fprintf(stderr, "Unexpected state %d\n", c->state);
+                    c->close_reason = ERROR_CLOSE;
                     conn_set_state(c, conn_closing);
                 }
                 break;
