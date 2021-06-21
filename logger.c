@@ -254,22 +254,26 @@ static int _logger_thread_parse_extw(logentry *e, char *scratch) {
 
 static int _logger_thread_parse_cne(logentry *e, char *scratch) {
     int total;
+    const char * const transport_map[] = { "local", "tcp", "udp" };
+
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
             "ts=%d.%d gid=%llu type=conn_new rip=%s rport=%hu transport=%s cfd=%d\n",
             (int) e->tv.tv_sec, (int) e->tv.tv_usec, (unsigned long long) e->gid,
-            le->rip, le->rport, le->transport, le->sfd);
+            le->rip, le->rport, transport_map[le->transport], le->sfd);
 
     return total;
 }
 
 static int _logger_thread_parse_cce(logentry *e, char *scratch) {
     int total;
+    const char * const transport_map[] = { "local", "tcp", "udp" };
+
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
             "ts=%d.%d gid=%llu type=conn_close rip=%s rport=%hu transport=%s cfd=%d\n",
             (int) e->tv.tv_sec, (int) e->tv.tv_usec, (unsigned long long) e->gid,
-            le->rip, le->rport, le->transport, le->sfd);
+            le->rip, le->rport, transport_map[le->transport], le->sfd);
 
     return total;
 }
@@ -742,21 +746,7 @@ static void _logger_log_conn_event(logentry *e, struct sockaddr *addr,
             break;
     }
 
-    switch (transport) {
-        case local_transport:
-            le->transport = "local";
-            break;
-        case tcp_transport:
-            le->transport = "tcp";
-            break;
-        case udp_transport:
-            le->transport = "udp";
-            break;
-        default:
-            le->transport = "unknown";
-            break;
-    }
-
+    le->transport = transport;
     e->size = sizeof(struct logentry_conn_event);
 }
 

@@ -105,7 +105,7 @@ struct logentry_item_store {
 struct logentry_conn_event {
     char rip[64];
     unsigned short rport;
-    const char *transport;
+    int transport;
     int sfd;
 };
 
