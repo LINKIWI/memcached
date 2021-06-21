@@ -245,6 +245,12 @@ enum stop_reasons {
     EXIT_NORMALLY
 };
 
+enum close_reasons {
+    NORMAL_CLOSE,
+    ERROR_CLOSE,
+    IDLE_TIMEOUT_CLOSE,
+};
+
 #define IS_TCP(x) (x == tcp_transport)
 #define IS_UDP(x) (x == udp_transport)
 
@@ -772,6 +778,7 @@ struct conn {
 #endif
     enum protocol protocol;   /* which protocol this connection speaks */
     enum network_transport transport; /* what transport is used by this connection */
+    enum close_reasons close_reason; /* reason for transition into conn_closing */
 
     /* data for UDP clients */
     int    request_id; /* Incoming UDP request ID, if this is a UDP "connection" */

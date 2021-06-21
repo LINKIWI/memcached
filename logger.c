@@ -268,12 +268,14 @@ static int _logger_thread_parse_cne(logentry *e, char *scratch) {
 static int _logger_thread_parse_cce(logentry *e, char *scratch) {
     int total;
     const char * const transport_map[] = { "local", "tcp", "udp" };
+    const char * const reason_map[] = { "normal", "error", "idle_timeout" };
 
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
-            "ts=%d.%d gid=%llu type=conn_close rip=%s rport=%hu transport=%s cfd=%d\n",
+            "ts=%d.%d gid=%llu type=conn_close rip=%s rport=%hu transport=%s reason=%s cfd=%d\n",
             (int) e->tv.tv_sec, (int) e->tv.tv_usec, (unsigned long long) e->gid,
-            le->rip, le->rport, transport_map[le->transport], le->sfd);
+            le->rip, le->rport, transport_map[le->transport],
+            reason_map[le->reason], le->sfd);
 
     return total;
 }
@@ -727,7 +729,7 @@ static void _logger_log_item_store(logentry *e, const enum store_item_type statu
 }
 
 static void _logger_log_conn_event(logentry *e, struct sockaddr *addr,
-        enum network_transport transport, int sfd) {
+        enum network_transport transport, enum close_reasons reason, int sfd) {
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
 
     memset(le->rip, 0, sizeof(le->rip));
@@ -747,6 +749,7 @@ static void _logger_log_conn_event(logentry *e, struct sockaddr *addr,
     }
 
     le->transport = transport;
+    le->reason = reason;
     e->size = sizeof(struct logentry_conn_event);
 }
 
@@ -834,9 +837,10 @@ enum logger_ret_type logger_log(logger *l, const enum log_entry_type event, cons
             va_start(ap, entry);
             struct sockaddr *addr = va_arg(ap, struct sockaddr *);
             enum network_transport transport = va_arg(ap, enum network_transport);
+            enum close_reasons reason = va_arg(ap, enum close_reasons);
             int csfd = va_arg(ap, int);
             va_end(ap);
-            _logger_log_conn_event(e, addr, transport, csfd);
+            _logger_log_conn_event(e, addr, transport, reason, csfd);
             break;
     }
 

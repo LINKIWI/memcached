@@ -106,6 +106,7 @@ struct logentry_conn_event {
     char rip[64];
     unsigned short rport;
     int transport;
+    int reason;
     int sfd;
 };
 
