@@ -252,7 +252,7 @@ static int _logger_thread_parse_extw(logentry *e, char *scratch) {
 }
 #endif
 
-static int _logger_thread_parse_cn(logentry *e, char *scratch) {
+static int _logger_thread_parse_cne(logentry *e, char *scratch) {
     int total;
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
@@ -263,7 +263,7 @@ static int _logger_thread_parse_cn(logentry *e, char *scratch) {
     return total;
 }
 
-static int _logger_thread_parse_cc(logentry *e, char *scratch) {
+static int _logger_thread_parse_cce(logentry *e, char *scratch) {
     int total;
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,
@@ -300,10 +300,10 @@ static enum logger_parse_entry_ret logger_thread_parse_entry(logentry *e, struct
             total = _logger_thread_parse_ise(e, scratch);
             break;
         case LOGGER_CONNECTION_NEW_ENTRY:
-            total = _logger_thread_parse_cn(e, scratch);
+            total = _logger_thread_parse_cne(e, scratch);
             break;
         case LOGGER_CONNECTION_CLOSE_ENTRY:
-            total = _logger_thread_parse_cc(e, scratch);
+            total = _logger_thread_parse_cce(e, scratch);
             break;
 
     }
