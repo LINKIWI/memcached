@@ -473,6 +473,9 @@ static inline void process_get_command(conn *c, token_t *tokens, size_t ntokens,
     mc_resp *resp = c->resp;
 
     if (suspended) {
+        pthread_mutex_lock(&c->thread->stats.mutex);
+        c->thread->stats.rejected_cmds++;
+        pthread_mutex_unlock(&c->thread->stats.mutex);
         out_string(c, "SERVER_ERROR server is suspended");
         return;
     }
@@ -1803,6 +1806,9 @@ static void process_update_command(conn *c, token_t *tokens, const size_t ntoken
     set_noreply_maybe(c, tokens, ntokens);
 
     if (suspended) {
+        pthread_mutex_lock(&c->thread->stats.mutex);
+        c->thread->stats.rejected_cmds++;
+        pthread_mutex_unlock(&c->thread->stats.mutex);
         out_string(c, "SERVER_ERROR server is suspended");
         return;
     }
@@ -1944,6 +1950,9 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
     set_noreply_maybe(c, tokens, ntokens);
 
     if (suspended) {
+        pthread_mutex_lock(&c->thread->stats.mutex);
+        c->thread->stats.rejected_cmds++;
+        pthread_mutex_unlock(&c->thread->stats.mutex);
         out_string(c, "SERVER_ERROR server is suspended");
         return;
     }
@@ -2009,6 +2018,9 @@ static void process_delete_command(conn *c, token_t *tokens, const size_t ntoken
     }
 
     if (suspended) {
+        pthread_mutex_lock(&c->thread->stats.mutex);
+        c->thread->stats.rejected_cmds++;
+        pthread_mutex_unlock(&c->thread->stats.mutex);
         out_string(c, "SERVER_ERROR server is suspended");
         return;
     }

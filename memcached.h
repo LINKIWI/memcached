@@ -305,6 +305,7 @@ struct slab_stats {
     X(conn_yields) /* # of yields for connections (-R option)*/ \
     X(auth_cmds) \
     X(auth_errors) \
+    X(rejected_cmds) \
     X(idle_kicks) /* idle connections killed */ \
     X(response_obj_oom) \
     X(response_obj_count) \

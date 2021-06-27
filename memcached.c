@@ -1744,6 +1744,7 @@ void server_stats(ADD_STAT add_stats, conn *c) {
     APPEND_STAT("touch_misses", "%llu", (unsigned long long)thread_stats.touch_misses);
     APPEND_STAT("auth_cmds", "%llu", (unsigned long long)thread_stats.auth_cmds);
     APPEND_STAT("auth_errors", "%llu", (unsigned long long)thread_stats.auth_errors);
+    APPEND_STAT("rejected_cmds", "%llu", (unsigned long long)thread_stats.rejected_cmds);
     if (settings.idle_timeout) {
         APPEND_STAT("idle_kicks", "%llu", (unsigned long long)thread_stats.idle_kicks);
     }
