@@ -472,6 +472,11 @@ static inline void process_get_command(conn *c, token_t *tokens, size_t ntokens,
     assert(c != NULL);
     mc_resp *resp = c->resp;
 
+    if (suspended) {
+        out_string(c, "SERVER_ERROR server is suspended");
+        return;
+    }
+
     if (should_touch) {
         // For get and touch commands, use first token as exptime
         if (!safe_strtol(tokens[1].value, &exptime_int)) {
@@ -1797,6 +1802,11 @@ static void process_update_command(conn *c, token_t *tokens, const size_t ntoken
 
     set_noreply_maybe(c, tokens, ntokens);
 
+    if (suspended) {
+        out_string(c, "SERVER_ERROR server is suspended");
+        return;
+    }
+
     if (tokens[KEY_TOKEN].length > KEY_MAX_LENGTH) {
         out_string(c, "CLIENT_ERROR bad command line format");
         return;
@@ -1933,6 +1943,11 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
 
     set_noreply_maybe(c, tokens, ntokens);
 
+    if (suspended) {
+        out_string(c, "SERVER_ERROR server is suspended");
+        return;
+    }
+
     if (tokens[KEY_TOKEN].length > KEY_MAX_LENGTH) {
         out_string(c, "CLIENT_ERROR bad command line format");
         return;
@@ -1991,6 +2006,11 @@ static void process_delete_command(conn *c, token_t *tokens, const size_t ntoken
                        "Usage: delete <key> [noreply]");
             return;
         }
+    }
+
+    if (suspended) {
+        out_string(c, "SERVER_ERROR server is suspended");
+        return;
     }
 
 
@@ -2365,6 +2385,25 @@ static void process_shutdown_command(conn *c, token_t *tokens, const size_t ntok
     }
 }
 
+static void process_suspend_command(conn *c, token_t *tokens, const size_t ntokens) {
+    if (!settings.suspend_command) {
+        out_string(c, "ERROR: suspend not enabled");
+        return;
+    }
+
+    if (ntokens != 3) {
+        out_string(c, "CLIENT_ERROR suspend requires enable/disable switch");
+    } else if (strcmp(tokens[SUBCOMMAND_TOKEN].value, "enable") == 0) {
+        suspended = true;
+        out_string(c, "OK");
+    } else if (strcmp(tokens[SUBCOMMAND_TOKEN].value, "disable") == 0) {
+        suspended = false;
+        out_string(c, "OK");
+    } else {
+        out_string(c, "CLIENT_ERROR invalid suspend state");
+    }
+}
+
 static void process_slabs_command(conn *c, token_t *tokens, const size_t ntokens) {
     if (ntokens == 5 && strcmp(tokens[COMMAND_TOKEN + 1].value, "reassign") == 0) {
         int src, dst, rv;
@@ -2629,6 +2668,9 @@ static void process_command(conn *c, char *command) {
         } else if (strcmp(tokens[COMMAND_TOKEN].value, "shutdown") == 0) {
 
             process_shutdown_command(c, tokens, ntokens);
+        } else if (strcmp(tokens[COMMAND_TOKEN].value, "suspend") == 0) {
+
+            process_suspend_command(c, tokens, ntokens);
         } else if (strcmp(tokens[COMMAND_TOKEN].value, "slabs") == 0) {
 
             process_slabs_command(c, tokens, ntokens);
