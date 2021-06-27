@@ -439,6 +439,7 @@ struct settings {
     unsigned int slab_automove_window; /* window mover for algorithm */
     int hashpower_init;     /* Starting hash power level */
     bool shutdown_command; /* allow shutdown command */
+    bool suspend_command; /* allow suspend command */
     int tail_repair_time;   /* LRU tail refcount leak repair time */
     bool flush_enabled;     /* flush_all enabled */
     bool dump_enabled;      /* whether cachedump/metadump commands work */
@@ -496,6 +497,7 @@ extern struct stats stats;
 extern struct stats_state stats_state;
 extern time_t process_started;
 extern struct settings settings;
+extern bool suspended;
 
 #define ITEM_LINKED 1
 #define ITEM_CAS 2

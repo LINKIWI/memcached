@@ -111,6 +111,8 @@ conn **conns;
 
 struct slab_rebalance slab_rebal;
 volatile int slab_rebalance_signal;
+
+bool suspended = false;
 #ifdef EXTSTORE
 /* hoping this is temporary; I'd prefer to cut globals, but will complete this
  * battle another day.
@@ -276,6 +278,7 @@ static void settings_init(void) {
     settings.slab_automove_ratio = 0.8;
     settings.slab_automove_window = 30;
     settings.shutdown_command = false;
+    settings.suspend_command = false;
     settings.tail_repair_time = TAIL_REPAIR_TIME_DEFAULT;
     settings.flush_enabled = true;
     settings.dump_enabled = true;
@@ -1879,6 +1882,7 @@ void process_stat_settings(ADD_STAT add_stats, void *c) {
 #endif
     APPEND_STAT("num_napi_ids", "%s", settings.num_napi_ids);
     APPEND_STAT("memory_file", "%s", settings.memory_file);
+    APPEND_STAT("suspend_command", "%s", settings.suspend_command ? "yes" : "no");
 }
 
 static int nz_strcmp(int nzlength, const char *nz, const char *z) {
@@ -4661,6 +4665,7 @@ int main (int argc, char **argv) {
     char *shortopts =
           "a:"  /* access mask for unix socket */
           "A"   /* enable admin shutdown command */
+          "G"   /* enable admin suspend command */
           "Z"   /* enable SSL */
           "p:"  /* TCP port number to listen on */
           "s:"  /* unix socket path to listen on */
@@ -4701,6 +4706,7 @@ int main (int argc, char **argv) {
     const struct option longopts[] = {
         {"unix-mask", required_argument, 0, 'a'},
         {"enable-shutdown", no_argument, 0, 'A'},
+        {"enable-suspend", no_argument, 0, 'G'},
         {"enable-ssl", no_argument, 0, 'Z'},
         {"port", required_argument, 0, 'p'},
         {"unix-socket", required_argument, 0, 's'},
@@ -4747,6 +4753,10 @@ int main (int argc, char **argv) {
         case 'A':
             /* enables "shutdown" command */
             settings.shutdown_command = true;
+            break;
+        case 'G':
+            /* enables "suspend" command */
+            settings.suspend_command = true;
             break;
         case 'Z':
             /* enable secure communication*/
