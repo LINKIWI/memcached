@@ -393,6 +393,7 @@ struct stats_state {
     bool          accepting_conns;  /* whether we are currently accepting */
     bool          slab_reassign_running; /* slab reassign in progress */
     bool          lru_crawler_running; /* crawl in progress */
+    bool          suspended; /* retrieval and storage commands are suspended */
 };
 
 #define MAX_VERBOSITY_LEVEL 2
@@ -498,7 +499,6 @@ extern struct stats stats;
 extern struct stats_state stats_state;
 extern time_t process_started;
 extern struct settings settings;
-extern bool suspended;
 
 #define ITEM_LINKED 1
 #define ITEM_CAS 2

@@ -111,8 +111,6 @@ conn **conns;
 
 struct slab_rebalance slab_rebal;
 volatile int slab_rebalance_signal;
-
-bool suspended = false;
 #ifdef EXTSTORE
 /* hoping this is temporary; I'd prefer to cut globals, but will complete this
  * battle another day.
@@ -1797,6 +1795,7 @@ void server_stats(ADD_STAT add_stats, conn *c) {
 #endif
     APPEND_STAT("unexpected_napi_ids", "%llu", (unsigned long long)stats.unexpected_napi_ids);
     APPEND_STAT("round_robin_fallback", "%llu", (unsigned long long)stats.round_robin_fallback);
+    APPEND_STAT("suspended", "%u", stats_state.suspended);
 }
 
 void process_stat_settings(ADD_STAT add_stats, void *c) {

@@ -435,6 +435,18 @@ static inline bool set_noreply_maybe(conn *c, token_t *tokens, size_t ntokens)
     return c->noreply;
 }
 
+static inline bool reject_suspended_maybe(conn *c) {
+    if (stats_state.suspended) {
+        pthread_mutex_lock(&c->thread->stats.mutex);
+        c->thread->stats.rejected_cmds++;
+        pthread_mutex_unlock(&c->thread->stats.mutex);
+        out_string(c, "SERVER_ERROR server is suspended");
+        return true;
+    }
+
+    return false;
+}
+
 /* client flags == 0 means use no storage for client flags */
 static inline int make_ascii_get_suffix(char *suffix, item *it, bool return_cas, int nbytes) {
     char *p = suffix;
@@ -472,11 +484,7 @@ static inline void process_get_command(conn *c, token_t *tokens, size_t ntokens,
     assert(c != NULL);
     mc_resp *resp = c->resp;
 
-    if (suspended) {
-        pthread_mutex_lock(&c->thread->stats.mutex);
-        c->thread->stats.rejected_cmds++;
-        pthread_mutex_unlock(&c->thread->stats.mutex);
-        out_string(c, "SERVER_ERROR server is suspended");
+    if (reject_suspended_maybe(c)) {
         return;
     }
 
@@ -1805,11 +1813,7 @@ static void process_update_command(conn *c, token_t *tokens, const size_t ntoken
 
     set_noreply_maybe(c, tokens, ntokens);
 
-    if (suspended) {
-        pthread_mutex_lock(&c->thread->stats.mutex);
-        c->thread->stats.rejected_cmds++;
-        pthread_mutex_unlock(&c->thread->stats.mutex);
-        out_string(c, "SERVER_ERROR server is suspended");
+    if (reject_suspended_maybe(c)) {
         return;
     }
 
@@ -1949,11 +1953,7 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
 
     set_noreply_maybe(c, tokens, ntokens);
 
-    if (suspended) {
-        pthread_mutex_lock(&c->thread->stats.mutex);
-        c->thread->stats.rejected_cmds++;
-        pthread_mutex_unlock(&c->thread->stats.mutex);
-        out_string(c, "SERVER_ERROR server is suspended");
+    if (reject_suspended_maybe(c)) {
         return;
     }
 
@@ -2017,11 +2017,7 @@ static void process_delete_command(conn *c, token_t *tokens, const size_t ntoken
         }
     }
 
-    if (suspended) {
-        pthread_mutex_lock(&c->thread->stats.mutex);
-        c->thread->stats.rejected_cmds++;
-        pthread_mutex_unlock(&c->thread->stats.mutex);
-        out_string(c, "SERVER_ERROR server is suspended");
+    if (reject_suspended_maybe(c)) {
         return;
     }
 
@@ -2406,10 +2402,14 @@ static void process_suspend_command(conn *c, token_t *tokens, const size_t ntoke
     if (ntokens != 3) {
         out_string(c, "CLIENT_ERROR suspend requires enable/disable switch");
     } else if (strcmp(tokens[SUBCOMMAND_TOKEN].value, "enable") == 0) {
-        suspended = true;
+        STATS_LOCK();
+        stats_state.suspended = true;
+        STATS_UNLOCK();
         out_string(c, "OK");
     } else if (strcmp(tokens[SUBCOMMAND_TOKEN].value, "disable") == 0) {
-        suspended = false;
+        STATS_LOCK();
+        stats_state.suspended = false;
+        STATS_UNLOCK();
         out_string(c, "OK");
     } else {
         out_string(c, "CLIENT_ERROR invalid suspend state");
