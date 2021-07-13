@@ -249,6 +249,7 @@ enum close_reasons {
     ERROR_CLOSE,
     NORMAL_CLOSE,
     IDLE_TIMEOUT_CLOSE,
+    SHUTDOWN_CLOSE,
 };
 
 #define IS_TCP(x) (x == tcp_transport)

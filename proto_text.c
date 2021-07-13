@@ -2428,9 +2428,11 @@ static void process_shutdown_command(conn *c, token_t *tokens, const size_t ntok
     }
 
     if (ntokens == 2) {
+        c->close_reason = SHUTDOWN_CLOSE;
         conn_set_state(c, conn_closing);
         raise(SIGINT);
     } else if (ntokens == 3 && strcmp(tokens[SUBCOMMAND_TOKEN].value, "graceful") == 0) {
+        c->close_reason = SHUTDOWN_CLOSE;
         conn_set_state(c, conn_closing);
         raise(SIGUSR1);
     } else {
