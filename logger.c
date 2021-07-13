@@ -268,7 +268,7 @@ static int _logger_thread_parse_cne(logentry *e, char *scratch) {
 static int _logger_thread_parse_cce(logentry *e, char *scratch) {
     int total;
     const char * const transport_map[] = { "local", "tcp", "udp" };
-    const char * const reason_map[] = { "normal", "error", "idle_timeout" };
+    const char * const reason_map[] = { "error", "normal", "idle_timeout" };
 
     struct logentry_conn_event *le = (struct logentry_conn_event *) e->data;
     total = snprintf(scratch, LOGGER_PARSE_SCRATCH,

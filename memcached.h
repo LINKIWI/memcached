@@ -246,8 +246,8 @@ enum stop_reasons {
 };
 
 enum close_reasons {
-    NORMAL_CLOSE,
     ERROR_CLOSE,
+    NORMAL_CLOSE,
     IDLE_TIMEOUT_CLOSE,
 };
 

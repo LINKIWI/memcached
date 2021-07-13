@@ -267,7 +267,6 @@ int try_read_command_asciiauth(conn *c) {
         // If no newline after 1k, getting junk data, close out.
         if (!el) {
             if (c->rbytes > 1024) {
-                c->close_reason = ERROR_CLOSE;
                 conn_set_state(c, conn_closing);
                 return 1;
             }
@@ -292,7 +291,6 @@ int try_read_command_asciiauth(conn *c) {
                 || !safe_strtoul(tokens[4].value, &size)) {
             if (!c->resp) {
                 if (!resp_start(c)) {
-                    c->close_reason = ERROR_CLOSE;
                     conn_set_state(c, conn_closing);
                     return 1;
                 }
@@ -316,7 +314,6 @@ int try_read_command_asciiauth(conn *c) {
     // Going to respond at this point, so attach a response object.
     if (!c->resp) {
         if (!resp_start(c)) {
-            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             return 1;
         }
@@ -384,7 +381,6 @@ int try_read_command_ascii(conn *c) {
             if (ptr - c->rcurr > 100 ||
                 (strncmp(ptr, "get ", 4) && strncmp(ptr, "gets ", 5))) {
 
-                c->close_reason = ERROR_CLOSE;
                 conn_set_state(c, conn_closing);
                 return 1;
             }
@@ -394,7 +390,6 @@ int try_read_command_ascii(conn *c) {
             // malloc/realloc/free routine just for this.
             if (!c->rbuf_malloced) {
                 if (!rbuf_switch_to_malloc(c)) {
-                    c->close_reason = ERROR_CLOSE;
                     conn_set_state(c, conn_closing);
                     return 1;
                 }
@@ -627,7 +622,6 @@ stop:
         // Start a new response object for the error message.
         if (!resp_start(c)) {
             // severe out of memory error.
-            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             return;
         }
@@ -2424,6 +2418,7 @@ static void process_version_command(conn *c) {
 static void process_quit_command(conn *c) {
     conn_set_state(c, conn_mwrite);
     c->close_after_write = true;
+    c->close_reason = NORMAL_CLOSE;
 }
 
 static void process_shutdown_command(conn *c, token_t *tokens, const size_t ntokens) {
@@ -2638,7 +2633,6 @@ static void process_command(conn *c, char *command) {
 
     // Prep the response object for this query.
     if (!resp_start(c)) {
-        c->close_reason = ERROR_CLOSE;
         conn_set_state(c, conn_closing);
         return;
     }
@@ -2825,7 +2819,6 @@ static void process_command(conn *c, char *command) {
 #endif
     } else {
         if (strncmp(tokens[ntokens - 2].value, "HTTP/", 5) == 0) {
-            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
         } else {
             out_string(c, "ERROR");

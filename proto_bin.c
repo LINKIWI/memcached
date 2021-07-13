@@ -82,7 +82,6 @@ int try_read_command_binary(conn *c) {
                 fprintf(stderr, "Invalid magic:  %x\n",
                         c->binary_header.request.magic);
             }
-            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             return -1;
         }
@@ -96,7 +95,6 @@ int try_read_command_binary(conn *c) {
         }
 
         if (!resp_start(c)) {
-            c->close_reason = ERROR_CLOSE;
             conn_set_state(c, conn_closing);
             return -1;
         }
@@ -1034,6 +1032,7 @@ static void dispatch_bin_command(conn *c, char *extbuf) {
                 write_bin_response(c, NULL, 0, 0, 0);
                 conn_set_state(c, conn_mwrite);
                 c->close_after_write = true;
+                c->close_reason = NORMAL_CLOSE;
             } else {
                 protocol_error = 1;
             }
