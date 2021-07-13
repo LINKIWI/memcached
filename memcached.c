@@ -891,6 +891,7 @@ static void conn_close(conn *c) {
     }
 #endif
     close(c->sfd);
+    c->close_reason = 0;
     pthread_mutex_lock(&conn_lock);
     allow_new_conns = true;
     pthread_mutex_unlock(&conn_lock);
