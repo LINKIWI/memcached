@@ -746,6 +746,14 @@ static void _logger_log_conn_event(logentry *e, struct sockaddr *addr,
                     le->rip, sizeof(le->rip) - 1);
             le->rport = ntohs(((struct sockaddr_in6 *) addr)->sin6_port);
             break;
+#ifndef DISABLE_UNIX_SOCKET
+        // Connections on Unix socket transports have c->request_addr zeroed out.
+        case AF_UNSPEC:
+        case AF_UNIX:
+            strncpy(le->rip, "unix", strlen("unix") + 1);
+            le->rport = 0;
+            break;
+#endif /* #ifndef DISABLE_UNIX_SOCKET */
     }
 
     le->transport = transport;
